@@ -43,6 +43,13 @@ function Sidebar() {
   )
 }
 
+const PageWrapper = ({ title, description }) => (
+  <div className="glass-panel" style={{ padding: 40, borderRadius: 24, minHeight: '80vh' }}>
+    <h2>{title}</h2>
+    <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>{description}</p>
+  </div>
+);
+
 function App() {
   return (
     <BrowserRouter>
@@ -52,9 +59,18 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/orders" element={<div className="glass-panel" style={{padding: 40, borderRadius: 24, minHeight: '80vh'}}><h2>Orders List</h2><p style={{color: 'var(--text-muted)', marginTop: 12}}>View all active and past orders here.</p></div>} />
-            <Route path="/alerts" element={<div className="glass-panel" style={{padding: 40, borderRadius: 24, minHeight: '80vh'}}><h2>Alerts Feed</h2><p style={{color: 'var(--text-muted)', marginTop: 12}}>View all system alerts and updates here.</p></div>} />
-            <Route path="/settings" element={<div className="glass-panel" style={{padding: 40, borderRadius: 24, minHeight: '80vh'}}><h2>Settings</h2><p style={{color: 'var(--text-muted)', marginTop: 12}}>Configure TrackFlow integrations and templates.</p></div>} />
+            <Route 
+              path="/orders" 
+              element={<PageWrapper title="Orders List" description="View all active and past orders here." />} 
+            />
+            <Route 
+              path="/alerts" 
+              element={<PageWrapper title="Alerts Feed" description="View all system alerts and updates here." />} 
+            />
+            <Route 
+              path="/settings" 
+              element={<PageWrapper title="Settings" description="Configure TrackFlow integrations and templates." />} 
+            />
           </Routes>
         </main>
       </div>
