@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { getTrackingDetail } = require("./tcs");
 
-async function createOrder(trackingNumber, customerName, destination) {
+async function createOrder(userId, trackingNumber, customerName, destination) {
   if (!trackingNumber) {
     throw new Error("Tracking number is required");
   }
@@ -25,7 +25,9 @@ async function createOrder(trackingNumber, customerName, destination) {
     
     const status = latestTcsStatus.trim().toLowerCase();
     
-    if (status.includes("delivered")) initialStatus = "Delivered";
+    if (status.includes("delivered")) {
+        throw new Error("This parcel is already delivered. No need to track! Please enter a different number.");
+    }
     else if (status.includes("awaiting receiver") || status.includes("awaiting consignee") || status.includes("pickup")) initialStatus = "Pickup Ready";
     else if (status.includes("return")) initialStatus = "Returned";
     else if (status.includes("delay")) initialStatus = "Delayed Shipment";
@@ -47,6 +49,7 @@ async function createOrder(trackingNumber, customerName, destination) {
 
   const newOrder = await prisma.order.create({
     data: {
+      userId,
       trackingNumber,
       customerName: autoCustomerName,
       destination: autoDestination,

@@ -1,8 +1,9 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-async function getDashboardData() {
+async function getDashboardData(userId) {
   const orders = await prisma.order.findMany({
+    where: { userId },
     orderBy: { createdAt: "desc" },
     include: { alerts: { orderBy: { createdAt: "desc" } } }
   });
@@ -18,6 +19,7 @@ async function getDashboardData() {
 
   // Get Recent Alerts
   const alerts = await prisma.alert.findMany({
+    where: { order: { userId } },
     take: 20,
     orderBy: { createdAt: "desc" },
     include: { order: true }
@@ -54,7 +56,8 @@ async function getDashboardData() {
       returns: returnsCount,
       pendingPickup: pendingPickupCount
     },
-    orders,
+    // We only return active/returned orders to the main list to keep it clean
+    orders: orders.filter(o => o.status !== "Delivered"),
     alerts,
     graphData
   };

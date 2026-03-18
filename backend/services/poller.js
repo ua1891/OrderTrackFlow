@@ -38,9 +38,14 @@ function determineNewStatus(currentStatus, latestTcsStatus) {
     alertType = "Delayed Shipment";
     message = "Parcel is experiencing a delay in transit.";
   } else if (
-    currentStatus === "Pending" && status
+    (status.includes("in transit") || status.includes("arrived") || status.includes("out for delivery")) &&
+    (currentStatus === "Pending" || currentStatus === "Returned" || currentStatus === "Delayed Shipment")
   ) {
     newStatus = "In Transit";
+    if (currentStatus === "Returned") {
+      alertType = "Re-attempted";
+      message = "A previously returned parcel is now back in transit for re-attempt.";
+    }
   }
 
   return { newStatus, alertType, message };
@@ -91,13 +96,16 @@ async function processOrderUpdate(order, tcsData) {
   }
 }
 
-// Fetch orders that are not Delivered and not Returned
+// Fetch orders that are not Delivered (we keep tracking Returned for re-attempts)
 async function fetchActiveOrders() {
   return await prisma.order.findMany({
     where: {
       status: {
-        notIn: ["Delivered", "Returned"]
+        notIn: ["Delivered"]
       }
+    },
+    include: {
+      user: true
     }
   });
 }

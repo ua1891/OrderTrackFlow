@@ -24,7 +24,7 @@ echo.
 
 :: Start Backend in a new window
 echo [SERVER] Initializing Backend API and Database...
-start "TrackFlow - Backend Engine" cmd /k "cd backend && echo Installing backend dependencies... && call npm install && echo Setting up database... && call npx prisma generate && call npx prisma migrate dev --name init && echo Starting server... && npm run dev"
+start "TrackFlow - Backend Engine" cmd /k "cd backend && echo Installing backend dependencies... && call npm install && echo Setting up database... && call npx prisma generate && call npx prisma db push --accept-data-loss && echo Starting server... && npm run dev"
 
 :: Start Frontend in a new window
 echo [UI FRONTEND] Initializing the Dashboard UI...
