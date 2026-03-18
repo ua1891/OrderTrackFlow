@@ -12,12 +12,12 @@ function determineNewStatus(currentStatus, latestTcsStatus) {
   let alertType = null;
   let message = "";
 
-  if (status === "delivered" && currentStatus !== "Delivered") {
+  if (status.includes("delivered") && currentStatus !== "Delivered") {
     newStatus = "Delivered";
     alertType = "Delivery Confirmed";
     message = "Parcel successfully delivered to the customer.";
   } else if (
-    (status === "awaiting receiver collection" || status.includes("pickup")) &&
+    (status.includes("awaiting receiver") || status.includes("awaiting consignee") || status.includes("pickup")) &&
     currentStatus !== "Pickup Ready"
   ) {
     newStatus = "Pickup Ready";
@@ -38,8 +38,7 @@ function determineNewStatus(currentStatus, latestTcsStatus) {
     alertType = "Delayed Shipment";
     message = "Parcel is experiencing a delay in transit.";
   } else if (
-    (status === "out for delivery" || status.includes("transit")) &&
-    currentStatus === "Pending"
+    currentStatus === "Pending" && status
   ) {
     newStatus = "In Transit";
   }
@@ -49,12 +48,19 @@ function determineNewStatus(currentStatus, latestTcsStatus) {
 
 // Detect status changes and trigger alerts
 async function processOrderUpdate(order, tcsData) {
-  // If there's no shipment info, skip
-  if (!tcsData.shipmentinfo || tcsData.shipmentinfo.length === 0) return;
+  // We need deliveryinfo or checkpoints for status
+  const dInfo = tcsData.deliveryinfo && tcsData.deliveryinfo.length > 0 ? tcsData.deliveryinfo[0] : null;
+  const cInfo = tcsData.checkpoints && tcsData.checkpoints.length > 0 ? tcsData.checkpoints[0] : null;
 
-  // The latest status is usually the first element
-  const info = tcsData.shipmentinfo[0];
-  const latestTcsStatus = info.status;
+  let latestTcsStatus = null;
+  if(dInfo && dInfo.status) {
+      latestTcsStatus = dInfo.status;
+  } else if(cInfo && cInfo.status) {
+      latestTcsStatus = cInfo.status;
+  }
+
+  if (!latestTcsStatus) return; // No status available yet
+
   const currentStatus = order.status;
 
   const { newStatus, alertType, message } = determineNewStatus(currentStatus, latestTcsStatus);

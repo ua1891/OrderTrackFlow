@@ -17,19 +17,19 @@ async function createOrder(trackingNumber, customerName, destination) {
   let initialStatus = "In Transit";
   let statusDetails = null;
   
-  const info = tcsData && tcsData.shipmentinfo && tcsData.shipmentinfo.length > 0 ? tcsData.shipmentinfo[0] : null;
+  const dInfo = tcsData && tcsData.deliveryinfo && tcsData.deliveryinfo.length > 0 ? tcsData.deliveryinfo[0] : null;
 
-  if (info) {
-    const latestTcsStatus = info.status;
+  if (dInfo && dInfo.status) {
+    const latestTcsStatus = dInfo.status;
     statusDetails = latestTcsStatus;
     
     const status = latestTcsStatus.trim().toLowerCase();
     
-    if (status === "delivered") initialStatus = "Delivered";
-    else if (status === "awaiting receiver collection" || status.includes("pickup")) initialStatus = "Pickup Ready";
+    if (status.includes("delivered")) initialStatus = "Delivered";
+    else if (status.includes("awaiting receiver") || status.includes("awaiting consignee") || status.includes("pickup")) initialStatus = "Pickup Ready";
     else if (status.includes("return")) initialStatus = "Returned";
     else if (status.includes("delay")) initialStatus = "Delayed Shipment";
-    else if (status === "out for delivery" || status.includes("transit")) initialStatus = "In Transit";
+    else initialStatus = "In Transit"; // default fallback for 'Arrived at TCS Facility', 'Out For Delivery'
   } else {
     initialStatus = "Pending";
   }
@@ -38,9 +38,11 @@ async function createOrder(trackingNumber, customerName, destination) {
   let autoCustomerName = customerName || "Unknown Customer";
   let autoDestination = destination || "Unknown Destination";
   
-  if (info) {
-    autoCustomerName = info.consignee || autoCustomerName;
-    autoDestination = info.destination || autoDestination;
+  const sInfo = tcsData && tcsData.shipmentinfo && tcsData.shipmentinfo.length > 0 ? tcsData.shipmentinfo[0] : null;
+
+  if (sInfo) {
+    autoCustomerName = sInfo.consignee || autoCustomerName;
+    autoDestination = sInfo.destination || autoDestination;
   }
 
   const newOrder = await prisma.order.create({
