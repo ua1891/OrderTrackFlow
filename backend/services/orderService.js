@@ -16,14 +16,20 @@ async function createOrder(trackingNumber, customerName, destination) {
   // Determine initial status from TCS if possible
   let initialStatus = "In Transit";
   let statusDetails = null;
-  if (tcsData && tcsData.deliveryinfo && tcsData.deliveryinfo.length > 0) {
-    const latestTcsStatus = tcsData.deliveryinfo[0].status;
+  
+  const info = tcsData && tcsData.shipmentinfo && tcsData.shipmentinfo.length > 0 ? tcsData.shipmentinfo[0] : null;
+
+  if (info) {
+    const latestTcsStatus = info.status;
     statusDetails = latestTcsStatus;
-    if (latestTcsStatus === "Delivered") initialStatus = "Delivered";
-    else if (latestTcsStatus === "Awaiting Receiver Collection") initialStatus = "Pickup Ready";
-    else if (latestTcsStatus.includes("Return")) initialStatus = "Returned";
-    else if (latestTcsStatus.includes("Delay")) initialStatus = "Delayed Shipment";
-    else if (latestTcsStatus === "Out For Delivery") initialStatus = "In Transit";
+    
+    const status = latestTcsStatus.trim().toLowerCase();
+    
+    if (status === "delivered") initialStatus = "Delivered";
+    else if (status === "awaiting receiver collection" || status.includes("pickup")) initialStatus = "Pickup Ready";
+    else if (status.includes("return")) initialStatus = "Returned";
+    else if (status.includes("delay")) initialStatus = "Delayed Shipment";
+    else if (status === "out for delivery" || status.includes("transit")) initialStatus = "In Transit";
   } else {
     initialStatus = "Pending";
   }
@@ -31,11 +37,10 @@ async function createOrder(trackingNumber, customerName, destination) {
   // Attempt to extract Consignee details from TCS response to automatically fill name & destination
   let autoCustomerName = customerName || "Unknown Customer";
   let autoDestination = destination || "Unknown Destination";
-  if (tcsData && tcsData.deliveryinfo && tcsData.deliveryinfo.length > 0) {
-    if (tcsData.consignment) {
-      autoCustomerName = tcsData.consignment.consigneeName || autoCustomerName;
-      autoDestination = tcsData.consignment.destinationCity || autoDestination;
-    }
+  
+  if (info) {
+    autoCustomerName = info.consignee || autoCustomerName;
+    autoDestination = info.destination || autoDestination;
   }
 
   const newOrder = await prisma.order.create({

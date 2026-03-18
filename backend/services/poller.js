@@ -49,12 +49,12 @@ function determineNewStatus(currentStatus, latestTcsStatus) {
 
 // Detect status changes and trigger alerts
 async function processOrderUpdate(order, tcsData) {
-  // If there's no delivery info, skip
-  if (!tcsData.deliveryinfo || tcsData.deliveryinfo.length === 0) return;
+  // If there's no shipment info, skip
+  if (!tcsData.shipmentinfo || tcsData.shipmentinfo.length === 0) return;
 
-  // The latest status is usually the first element or determined by datetime
-  // Let's take the first one assuming it's latest
-  const latestTcsStatus = tcsData.deliveryinfo[0].status;
+  // The latest status is usually the first element
+  const info = tcsData.shipmentinfo[0];
+  const latestTcsStatus = info.status;
   const currentStatus = order.status;
 
   const { newStatus, alertType, message } = determineNewStatus(currentStatus, latestTcsStatus);

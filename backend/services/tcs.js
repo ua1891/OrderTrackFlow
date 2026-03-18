@@ -1,43 +1,21 @@
 const axios = require("axios");
 
-const BASE_URL_ECOM = "https://ociconnect.tcscourier.com/ecom/api";
 const BASE_URL_TRACKING = "https://ociconnect.tcscourier.com/tracking/api";
 
-const username = process.env.TCS_USERNAME;
-const password = process.env.TCS_PASSWORD;
+// Hardcoded token provided by the user
+const BEARER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRpZCI6IjIxNTYyNDgyMCIsInNlcnZpY2VzIjoiMTAzLDE1NSwxNjEsMTY0LDIyNSwyNDcsMjQ4LDI0OSwyNTAsMjUxLDI3NywyOTMsMzY3LDM3MywzNzcsMzg4LDQ0OCw0NDksNDUwLDQ1MSw0NTIsNDUzLDQ1NCw0NzIsNDczIiwiZXhjbHVkZWQtc2VydmljZXMiOiIiLCJpc3MiOiJjb25uZWN0LnRjc2NvdXJpZXIuY29tIiwianRpIjoiYjMzZjc0MjItZDFiOS00MjMwLWI0NDctNTBmZmUwMTk4NTU3IiwibmJmIjoxNzczMjQ0NjkxLCJleHAiOjE4NTk2NDQ2OTEsImlhdCI6MTc3MzI0NDY5MX0.K5spEtZuz4y84qcrQESC0r7YmfY3MSmS-1t0GQhi-Rc";
 
-let cachedToken = null;
-let tokenExpiry = null;
-
-async function getToken() {//Just for future use Nothing else 
-  if (cachedToken && tokenExpiry && new Date() < new Date(tokenExpiry)) {
-    return cachedToken;
-  }
-
-  try {
-    const response = await axios.get(`${BASE_URL_ECOM}/authentication/token`, {
-      params: { username, password }
-    });
-
-    // As per manual, returns accesstoken and expiry
-    cachedToken = response.data.accesstoken;
-    tokenExpiry = response.data.expiry;
-
-    return cachedToken;
-  } catch (error) {
-    console.error("Error fetching TCS token:", error.message);
-    throw error;
-  }
+async function getToken() {
+  // Just return the hardcoded token for now as per user request
+  return BEARER_TOKEN;
 }
 
 async function getTrackingDetail(consignmentNo) {
   try {
-    const token = await getToken();
-
     const response = await axios.get(`${BASE_URL_TRACKING}/Tracking/GetDynamicTrackDetail`, {
       params: { consignee: consignmentNo },
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${BEARER_TOKEN}`
       }
     });
 
