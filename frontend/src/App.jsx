@@ -38,7 +38,7 @@ function Sidebar() {
         <div className="avatar">V</div>
         <div className="user-info">
           <span className="user-name">Vendor Co.</span>
-          <span className="user-email">vendor@mail.com</span>
+          <span className="user-email">{import.meta.env.VITE_VENDOR_EMAIL || "vendor@trackflow.com"}</span>
         </div>
       </div>
     </div>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Eye, BellRing, Filter } from 'lucide-react';
+import { Eye, Filter } from 'lucide-react';
 import { getTimeAgo } from '../utils/dateUtils';
 
-export default function OrdersTable({ orders, onSimulate }) {
+export default function OrdersTable({ orders }) {
   const [filter, setFilter] = useState('All Status');
-  const [isSimulating, setIsSimulating] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -16,32 +16,45 @@ export default function OrdersTable({ orders, onSimulate }) {
     }
   };
 
-
-
-  const handleSimulateClick = async (id, type) => {
-    setIsSimulating(id);
-    await onSimulate(id, type);
-    setIsSimulating(null);
-  };
-
-  const filteredOrders = filter === 'All Status'
-    ? orders
-    : orders.filter(o => o.status === filter);
+  const filteredOrders = orders.filter(o => {
+    const matchesStatus = filter === 'All Status' || o.status === filter;
+    const matchesSearch = o.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         o.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <div>
-      <div className="orders-table-controls">
-        <input
-          type="text"
-          placeholder="Search by tracking or customer..."
+      <div className="orders-table-controls" style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+        <input 
+          type="text" 
+          placeholder="Search by tracking or customer..." 
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
           className="search-input"
+          style={{ 
+            flex: 1, 
+            padding: '10px 16px', 
+            borderRadius: 8, 
+            border: '1px solid var(--border-color)',
+            outline: 'none',
+            fontSize: 14
+          }} 
         />
-        <div className="filter-group">
+        <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Filter size={18} color="var(--text-muted)" />
-          <select
+          <select 
             value={filter}
             onChange={e => setFilter(e.target.value)}
             className="filter-select"
+            style={{ 
+              padding: '10px 16px', 
+              borderRadius: 8, 
+              border: '1px solid var(--border-color)',
+              outline: 'none',
+              backgroundColor: 'white',
+              fontSize: 14
+            }}
           >
             <option>All Status</option>
             <option>In Transit</option>
@@ -79,19 +92,8 @@ export default function OrdersTable({ orders, onSimulate }) {
                   {getTimeAgo(order.updatedAt)}
                 </td>
                 <td>
-                  <div className="order-actions">
-                    <Eye size={18} className="action-icon" title="View Details" />
-                    <div className="simulation-menu-container">
-                      <button
-                        onClick={() => handleSimulateClick(order.id, 'Delivered')}
-                        disabled={isSimulating === order.id}
-                        className="test-alert-btn"
-                        title="Simulate Delivery Alert"
-                      >
-                        <BellRing size={12} />
-                        Test Alert
-                      </button>
-                    </div>
+                  <div className="order-actions" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <Eye size={18} className="action-icon" style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="View Details" />
                   </div>
                 </td>
               </tr>

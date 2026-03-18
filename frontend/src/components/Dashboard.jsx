@@ -9,7 +9,9 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,6 +22,7 @@ export default function Dashboard() {
     try {
       const res = await client.get(`/orders/dashboard`);
       setData(res.data);
+      setLastUpdated(new Date());
       setError(null);
     } catch (err) {
       console.error("Failed to load dashboard data", err);
@@ -31,6 +34,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleAddShipment = async (e) => {
@@ -42,30 +48,24 @@ export default function Dashboard() {
       setIsModalOpen(false);
       setFormData({ trackingNumber: '' });
       fetchDashboardData();
+    } catch (err) {
+      setSubmitError(err.response?.data?.error || "Failed to add shipment.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSimulate = async (id, type) => {
-    try {
-      await client.post(`/orders/${id}/simulate-alert`, { type });
-      // Refresh to show new alert and status
-      fetchDashboardData();
-    } catch (err) {
-      console.error("Simulation failed", err);
-      alert("Failed to trigger simulation: " + (err.response?.data?.error || err.message));
-    }
-  };
-
   if (loading) return <div style={{ padding: 40, fontFamily: 'Outfit, sans-serif' }}>Loading TrackFlow...</div>;
+
+  const timeSinceUpdate = Math.floor((new Date() - lastUpdated) / 1000);
+  const updateText = timeSinceUpdate < 10 ? "Updated just now" : `Updated ${timeSinceUpdate}s ago`;
 
   return (
     <div className="dashboard">
       <div className="header">
         <h1>Dashboard</h1>
         <div className="header-actions">
-          <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Updated just now</span>
+          <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{updateText}</span>
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             <Plus size={18} />
             Track Shipment
@@ -183,7 +183,7 @@ export default function Dashboard() {
 
               <div className="table-section">
                 <h3 className="section-title">Recent Orders</h3>
-                <OrdersTable orders={data.orders} onSimulate={handleSimulate} />
+                <OrdersTable orders={data.orders} />
               </div>
             </div>
 
