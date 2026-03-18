@@ -7,37 +7,38 @@ const prisma = new PrismaClient();
 
 // Helper to determine status and alerts
 function determineNewStatus(currentStatus, latestTcsStatus) {
+  const status = latestTcsStatus.trim().toLowerCase();
   let newStatus = currentStatus;
   let alertType = null;
   let message = "";
 
-  if (latestTcsStatus === "Delivered" && currentStatus !== "Delivered") {
+  if (status === "delivered" && currentStatus !== "Delivered") {
     newStatus = "Delivered";
     alertType = "Delivery Confirmed";
     message = "Parcel successfully delivered to the customer.";
   } else if (
-    latestTcsStatus === "Awaiting Receiver Collection" &&
+    (status === "awaiting receiver collection" || status.includes("pickup")) &&
     currentStatus !== "Pickup Ready"
   ) {
     newStatus = "Pickup Ready";
     alertType = "Pickup Ready";
     message = "Parcel has arrived at TCS office and is ready for pickup.";
   } else if (
-    latestTcsStatus.includes("Return") &&
+    status.includes("return") &&
     currentStatus !== "Returned"
   ) {
     newStatus = "Returned";
     alertType = "Return Initiated";
     message = "Parcel was marked as returned by TCS. Immediate action needed.";
   } else if (
-    latestTcsStatus.includes("Delay") &&
+    status.includes("delay") &&
     currentStatus !== "Delayed Shipment"
   ) {
     newStatus = "Delayed Shipment";
     alertType = "Delayed Shipment";
     message = "Parcel is experiencing a delay in transit.";
   } else if (
-    latestTcsStatus === "Out For Delivery" &&
+    (status === "out for delivery" || status.includes("transit")) &&
     currentStatus === "Pending"
   ) {
     newStatus = "In Transit";

@@ -20,17 +20,6 @@ export default function OrdersPage() {
     }
   };
 
-  // Handler for simulation from the orders page
-  const handleSimulate = async (id, type) => {
-    try {
-      await client.post(`/orders/${id}/simulate-alert`, { type });
-      fetchOrders();
-    } catch (err) {
-      console.error("Simulation failed", err);
-      alert("Failed to trigger simulation: " + (err.response?.data?.error || err.message));
-    }
-  };
-
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -47,7 +36,7 @@ export default function OrdersPage() {
       {error ? (
         <div style={{ padding: '16px', background: '#fee2e2', color: '#b91c1c', borderRadius: '12px' }}>{error}</div>
       ) : (
-        <OrdersTable orders={orders} onSimulate={handleSimulate} />
+        <OrdersTable orders={orders} />
       )}
     </div>
   );
