@@ -193,4 +193,13 @@ router.post("/:id/simulate-alert", async (req, res) => {
   }
 });
 
+
+const { sendWhatsAppMessage } = require("../services/whatsappService");
+
+router.post("/test-whatsapp", async (req, res) => {
+  await sendWhatsAppMessage("923102501142");
+  res.send("Message trigger done");
+});
+
+
 module.exports = router;
