@@ -5,7 +5,14 @@ Welcome to the TrackFlow application! For a detailed understanding of what this 
 ## Prerequisites
 To run this application, you must first install Node.js (https://nodejs.org/) on your machine.
 
-## Setup Instructions
+## Quick Start (Windows)
+The easiest way to start both the backend and frontend together is using the provided startup script:
+1. Double-click `start-trackflow.bat` in the root directory.
+2. This will automatically install dependencies, set up the SQLite database, and launch both servers and your browser.
+
+---
+
+## Manual Setup Instructions
 
 ### 1. Backend Setup
 1. Open a terminal and navigate to the `backend` folder:

@@ -4,7 +4,7 @@
   "description": "TCS Automated Notification System Backend",
   "main": "server.js",
   "scripts": {
-    "start": "npx prisma migrate deploy && node server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js",
     "db:init": "npx prisma migrate dev --name init"
   },
