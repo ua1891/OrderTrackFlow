@@ -1,13 +1,14 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const { sendWelcomeEmail } = require('./email');
-
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_trackflow_key_123';
 
 async function registerUser(name, email) {
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) throw new Error('Invalid email format.');
+
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) throw new Error('User already exists with this email.');
 

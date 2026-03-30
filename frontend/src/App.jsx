@@ -37,13 +37,13 @@ function Sidebar() {
         </NavLink>
       </div>
 
-      <div className="user-profile" style={{ flexWrap: 'wrap', gap: '8px' }}>
+      <div className="user-profile">
         <div className="avatar">{user.name.charAt(0).toUpperCase()}</div>
-        <div className="user-info" style={{ flex: 1, minWidth: '100px' }}>
+        <div className="user-info">
           <span className="user-name">{user.name}</span>
           <span className="user-email">{user.email}</span>
         </div>
-        <button onClick={logout} className="btn" style={{ padding: '6px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Logout">
+        <button onClick={logout} className="logout-button" title="Logout">
           <LogOut size={18} />
         </button>
       </div>
@@ -56,7 +56,12 @@ const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
   const location = useLocation();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="loading-screen">
+      <div className="loader"></div>
+      <span>Loading TrackFlow...</span>
+    </div>
+  );
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 
   return children;

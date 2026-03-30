@@ -1,9 +1,7 @@
 const cron = require("node-cron");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const { getTrackingDetail } = require("./tcs");
 const { sendAlertEmail } = require("./email");
-
-const prisma = new PrismaClient();
 
 // Helper to determine status and alerts
 function determineNewStatus(currentStatus, latestTcsStatus) {

@@ -8,15 +8,25 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for token and user
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    
+
     if (storedToken && storedUser) {
-      // In a robust app, we should verify the token with the backend here
-      setUser(JSON.parse(storedUser));
+      // Verify the token is still valid with the backend
+      client.get('/auth/me')
+        .then(res => {
+          setUser(res.data.user);
+        })
+        .catch(() => {
+          // Token is invalid or user no longer exists — clear everything
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
