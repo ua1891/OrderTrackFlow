@@ -15,6 +15,15 @@ router.post("/", async (req, res) => {
     // createOrder handles validation, TCS check, and DB creation
     const newOrder = await createOrder(req.user.id, trackingNumber, customerName, destination);
 
+      // hardcoded phone (for testing)
+    const testPhone = "923XXXXXXXXX";
+
+    await sendWhatsAppMessage(
+      testPhone,
+      `🔥 Order Confirmed!\n\nOrder ID: ${newOrder.id}\nTracking: ${newOrder.trackingNumber}`
+    );
+
+
     res.status(201).json(newOrder);
   } catch (error) {
     if (error.code === 'P2002') {
