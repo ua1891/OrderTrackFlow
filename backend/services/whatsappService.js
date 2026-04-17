@@ -1,10 +1,10 @@
 require('dotenv').config();
 const axios = require('axios');
 
-const sendWhatsAppMessage = async (to, message) => {
+async function sendTemplateMessage() {
     try {
-        await axios({
-            url: `https://graph.facebook.com/v22.0/${process.env.PHONE_NUMBER_ID}/messages`,
+        const response = await axios({
+            url: 'https://graph.facebook.com/v22.0/1063971673464877/messages',
             method: 'post',
             headers: {
                 Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
@@ -12,16 +12,21 @@ const sendWhatsAppMessage = async (to, message) => {
             },
             data: {
                 messaging_product: 'whatsapp',
-                to: to,
-                type: 'text',
-                text: {
-                    body: message
+                to: '923102501142',
+                type: 'template',
+                template: {
+                    name: 'hello_world',
+                    language: {
+                        code: 'en_US'
+                    }
                 }
             }
         });
-    } catch (error) {
-        console.error("WhatsApp Error:", error.response?.data || error.message);
-    }
-};
 
-module.exports = { sendWhatsAppMessage };
+        console.log(response.data);
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+    }
+}
+
+sendTemplateMessage();
