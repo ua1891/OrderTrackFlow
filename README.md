@@ -48,8 +48,38 @@ The easiest way to start both the backend and frontend together is using the pro
    ```
 4. Open the provided `localhost` URL (usually `http://localhost:5173`) in your browser to view the TrackFlow Dashboard.
 
-## Features Built
-- **TCS API Integration**: Connects to the official TCS APIs to retrieve OAuth tokens and fetch dynamic tracking details for multiple Consignment Numbers.
-- **Cron Service**: Automatically checks orders stored in the SQLite database every 5 minutes without manual intervention.
-- **Automated Email Alerts**: Detects status changes and automatically alerts the vendor (`ua9118@gmail.com`) using Nodemailer.
-- **Dynamic Dashboard**: Responsive, glassmorphic UI matching exact specifications featuring metrics, a weekly line-chart summary, sortable/filterable Order list, and a smart visual alert feed.
+## Features
+- **TCS API Integration**: Connects to official TCS APIs for automated consignment tracking.
+- **Background Cron Service**: Automatically polls TCS every 5 minutes and updates order statuses.
+- **Automated Email Alerts**: Real-time notification system for vendors and customers.
+- **Premium Dashboard**: Glassmorphic UI featuring analytics, tracking history, and alert feeds.
+
+---
+
+## Deployment
+To deploy TrackFlow to a production environment:
+
+### 1. Environment Variables
+Ensure all variables in `backend/.env` are set correctly for production:
+- `JWT_SECRET`: A long, random string.
+- `DATABASE_URL`: Path to your SQLite file (or postgres/mysql if migrating).
+- `SMTP_USER` & `SMTP_PASS`: Your production email credentials.
+
+### 2. Frontend Build
+```bash
+cd frontend
+npm run build
+```
+The production files will be in `frontend/dist`. These can be served by Nginx or the backend.
+
+### 3. Backend Production
+Use a process manager like **PM2** to keep the server running:
+```bash
+cd backend
+npm install
+npx prisma generate
+npm start
+```
+
+---
+*Cleaned and optimized for deployment.*
