@@ -2,9 +2,7 @@ const nodemailer = require("nodemailer");
 const { getAlertEmailHTML, getWelcomeEmailHTML } = require("../utils/emailTemplates");
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT),
-  secure: false, // true for 465, false for other ports
+  service: 'gmail',
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -13,7 +11,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendAlertEmail(order, alertType, message) {
   try {
-    const targetEmail = order.user && order.user.email ? order.user.email : process.env.VENDOR_EMAIL;
+    const targetEmail = order.user?.email || process.env.VENDOR_EMAIL;
 
     const mailOptions = {
       from: `"TrackFlow System" <${process.env.SMTP_USER}>`,
@@ -35,15 +33,11 @@ async function sendWelcomeEmail(user, generatedPassword) {
       from: `"TrackFlow System" <${process.env.SMTP_USER}>`,
       to: user.email,
       subject: `Welcome to TrackFlow - Your Account Credentials`,
-      html: getWelcomeEmailHTML(user.name, generatedPassword),
+      html: getWelcomeEmailHTML(user.name, user.email, generatedPassword),
     };
 
     const info = await transporter.sendMail(mailOptions);
     console.log(`Welcome email sent for ${user.email}: ${info.messageId}`);
-    console.log(`--------------------------------------------------------`);
-    console.log(`🔑 MAGIC PASSWORD GENERATED: ${generatedPassword}`);
-    console.log(`User: ${user.name} (${user.email})`);
-    console.log(`--------------------------------------------------------`);
   } catch (error) {
     console.error(`Failed to send welcome email for ${user.email}:`, error.message);
   }

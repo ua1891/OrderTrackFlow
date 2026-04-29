@@ -67,13 +67,6 @@ const PrivateRoute = ({ children }) => {
   return children;
 };
 
-const PageWrapper = ({ title, description }) => (
-  <div className="glass-panel" style={{ padding: 40, borderRadius: 24, minHeight: '80vh' }}>
-    <h2>{title}</h2>
-    <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>{description}</p>
-  </div>
-);
-
 function App() {
   return (
     <AuthProvider>

@@ -12,7 +12,7 @@ const getAlertEmailHTML = (order, alertType, message) => {
   `;
 };
 
-const getWelcomeEmailHTML = (userName, generatedPassword) => {
+const getWelcomeEmailHTML = (userName, userEmail, generatedPassword) => {
   return `
     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; border: 1px solid #e5e7eb; border-radius: 8px;">
       <h2 style="color: #2563eb;">Welcome to TrackFlow, ${userName}!</h2>
@@ -22,7 +22,7 @@ const getWelcomeEmailHTML = (userName, generatedPassword) => {
       <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
         <h3 style="margin-top: 0; color: #1f2937;">Your Account Credentials</h3>
         <p style="margin: 5px 0;"><strong>Username / Email:</strong></p>
-        <p style="margin: 5px 0 15px 0; font-family: monospace; font-size: 16px;">System Login Email</p>
+        <p style="margin: 5px 0 15px 0; font-family: monospace; font-size: 16px;">${userEmail}</p>
         <p style="margin: 5px 0;"><strong>Auto-Generated Password:</strong></p>
         <p style="margin: 5px 0; font-family: monospace; font-size: 18px; font-weight: bold; padding: 8px; background-color: #e5e7eb; display: inline-block; border-radius: 4px;">${generatedPassword}</p>
         <p style="margin-top: 10px; font-size: 14px; color: #dc2626;">Please copy this password. You will need it to log in.</p>

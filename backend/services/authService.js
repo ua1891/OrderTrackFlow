@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const prisma = require('../utils/prisma');
+const { sendWelcomeEmail } = require('./email');
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_trackflow_key_123';
 
 async function registerUser(name, email) {
@@ -23,7 +24,7 @@ async function registerUser(name, email) {
   const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
 
   // Send Welcome Email containing the plaintext password
-  sendWelcomeEmail(user, generatedPassword);
+  await sendWelcomeEmail(user, generatedPassword);
 
   return { user: { id: user.id, name: user.name, email: user.email }, token };
 }

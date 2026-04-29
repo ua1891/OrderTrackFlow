@@ -1,11 +1,12 @@
 const cron = require("node-cron");
 const prisma = require("../utils/prisma");
-const { getTrackingDetail } = require("./tcs");
+const { getTrackingDetail: getTcsTracking } = require("./tcs");
+const { getTrackingDetail: getPostexTracking } = require("./postex");
 const { sendAlertEmail } = require("./email");
 
 // Helper to determine status and alerts
-function determineNewStatus(currentStatus, latestTcsStatus) {
-  const status = latestTcsStatus.trim().toLowerCase();
+function determineNewStatus(currentStatus, latestStatusRaw) {
+  const status = latestStatusRaw.trim().toLowerCase();
   let newStatus = currentStatus;
   let alertType = null;
   let message = "";
@@ -15,29 +16,29 @@ function determineNewStatus(currentStatus, latestTcsStatus) {
     alertType = "Delivery Confirmed";
     message = "Parcel successfully delivered to the customer.";
   } else if (
-    (status.includes("awaiting receiver") || status.includes("awaiting consignee") || status.includes("pickup")) &&
-    currentStatus !== "Pickup Ready"
+    (status.includes("awaiting receiver") || status.includes("awaiting consignee") || status.includes("pickup") || status.includes("picked") || status.includes("warehouse")) &&
+    currentStatus !== "Pickup Ready" && currentStatus !== "In Transit" && currentStatus !== "Delivered" && currentStatus !== "Returned"
   ) {
     newStatus = "Pickup Ready";
     alertType = "Pickup Ready";
-    message = "Parcel has arrived at TCS office and is ready for pickup.";
+    message = "Parcel has arrived at the facility and is ready for pickup or processing.";
   } else if (
     status.includes("return") &&
     currentStatus !== "Returned"
   ) {
     newStatus = "Returned";
     alertType = "Return Initiated";
-    message = "Parcel was marked as returned by TCS. Immediate action needed.";
+    message = "Parcel was marked as returned by the courier. Immediate action needed.";
   } else if (
-    status.includes("delay") &&
+    (status.includes("delay") || status.includes("review") || status.includes("attempt")) &&
     currentStatus !== "Delayed Shipment"
   ) {
     newStatus = "Delayed Shipment";
     alertType = "Delayed Shipment";
-    message = "Parcel is experiencing a delay in transit.";
+    message = "Parcel is experiencing a delay or an attempt issue in transit.";
   } else if (
-    (status.includes("in transit") || status.includes("arrived") || status.includes("out for delivery")) &&
-    (currentStatus === "Pending" || currentStatus === "Returned" || currentStatus === "Delayed Shipment")
+    (status.includes("in transit") || status.includes("arrived") || status.includes("out for delivery") || status.includes("route")) &&
+    (currentStatus === "Pending" || currentStatus === "Returned" || currentStatus === "Delayed Shipment" || currentStatus === "Pickup Ready")
   ) {
     newStatus = "In Transit";
     if (currentStatus === "Returned") {
@@ -50,36 +51,45 @@ function determineNewStatus(currentStatus, latestTcsStatus) {
 }
 
 // Detect status changes and trigger alerts
-async function processOrderUpdate(order, tcsData) {
-  // We need deliveryinfo or checkpoints for status
-  const dInfo = tcsData.deliveryinfo && tcsData.deliveryinfo.length > 0 ? tcsData.deliveryinfo[0] : null;
-  const cInfo = tcsData.checkpoints && tcsData.checkpoints.length > 0 ? tcsData.checkpoints[0] : null;
+async function processOrderUpdate(order, trackingData, isPostex) {
+  let latestStatus = null;
 
-  let latestTcsStatus = null;
-  if(dInfo && dInfo.status) {
-      latestTcsStatus = dInfo.status;
-  } else if(cInfo && cInfo.status) {
-      latestTcsStatus = cInfo.status;
+  if (isPostex) {
+    if (trackingData.dist && trackingData.dist.transactionStatus) {
+      latestStatus = trackingData.dist.transactionStatus;
+    }
+  } else {
+    // We need deliveryinfo or checkpoints for status
+    const dInfo = trackingData.deliveryinfo && trackingData.deliveryinfo.length > 0 ? trackingData.deliveryinfo[0] : null;
+    const cInfo = trackingData.checkpoints && trackingData.checkpoints.length > 0 ? trackingData.checkpoints[0] : null;
+
+    if(dInfo && dInfo.status) {
+        latestStatus = dInfo.status;
+    } else if(cInfo && cInfo.status) {
+        latestStatus = cInfo.status;
+    }
   }
 
-  if (!latestTcsStatus) return; // No status available yet
+  if (!latestStatus) return; // No status available yet
 
   const currentStatus = order.status;
 
-  const { newStatus, alertType, message } = determineNewStatus(currentStatus, latestTcsStatus);
+  const { newStatus, alertType, message } = determineNewStatus(currentStatus, latestStatus);
 
   // Update DB and Send Email if status changed
-  if (newStatus !== currentStatus) {
-    console.log(`Order ${order.trackingNumber}: Status changed ${currentStatus} -> ${newStatus}`);
+  if (newStatus !== currentStatus || latestStatus !== order.statusDetails) {
+    if (newStatus !== currentStatus) {
+      console.log(`Order ${order.trackingNumber}: Status changed ${currentStatus} -> ${newStatus}`);
+    }
     
     // Update order status
     await prisma.order.update({
       where: { id: order.id },
-      data: { status: newStatus, statusDetails: latestTcsStatus }
+      data: { status: newStatus, statusDetails: latestStatus }
     });
 
     // Create alert and trigger email if it's a significant alertType
-    if (alertType) {
+    if (alertType && newStatus !== currentStatus) {
       await prisma.alert.create({
         data: {
           orderId: order.id,
@@ -112,9 +122,17 @@ async function fetchActiveOrders() {
 async function trackAndProcessOrders(activeOrders) {
   for (const order of activeOrders) {
     try {
-      const tcsData = await getTrackingDetail(order.trackingNumber);
-      if (tcsData.status !== "FAIL") {
-        await processOrderUpdate(order, tcsData);
+      const isPostex = order.trackingNumber.toLowerCase().startsWith('cx-');
+      let trackingData;
+      
+      if (isPostex) {
+        trackingData = await getPostexTracking(order.trackingNumber);
+      } else {
+        trackingData = await getTcsTracking(order.trackingNumber);
+      }
+
+      if (trackingData && trackingData.status !== "FAIL") {
+        await processOrderUpdate(order, trackingData, isPostex);
       }
     } catch (error) {
       console.error(`Failed to track ${order.trackingNumber}: ${error.message}`);
@@ -127,7 +145,7 @@ async function trackAndProcessOrders(activeOrders) {
 
 // Main logic for the tracking cycle
 async function runTrackingCycle() {
-  console.log("[POLLER] Running TCS tracking check...");
+  console.log("[POLLER] Running PostEx & TCS tracking check...");
   try {
     const activeOrders = await fetchActiveOrders();
     await trackAndProcessOrders(activeOrders);

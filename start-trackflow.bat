@@ -24,11 +24,11 @@ echo.
 
 :: Start Backend in a new window
 echo [SERVER] Initializing Backend API and Database...
-start "TrackFlow - Backend Engine" cmd /k "cd backend && echo Installing backend dependencies... && call npm install && echo Setting up database... && call npx prisma generate && call npx prisma db push --accept-data-loss && echo Starting server... && npm run dev"
+start "TrackFlow - Backend Engine" cmd /k "cd backend && (if not exist node_modules (echo Installing backend dependencies... && call npm install)) && echo Setting up database... && call npx prisma generate && call npx prisma db push --accept-data-loss && echo Starting server... && npm run dev"
 
 :: Start Frontend in a new window
 echo [UI FRONTEND] Initializing the Dashboard UI...
-start "TrackFlow - Frontend Dashboard" cmd /k "cd frontend && echo Installing frontend dependencies... && call npm install && echo Starting dashboard... && npm run dev"
+start "TrackFlow - Frontend Dashboard" cmd /k "cd frontend && (if not exist node_modules (echo Installing frontend dependencies... && call npm install)) && echo Starting dashboard... && npm run dev"
 
 echo.
 echo Waiting 10 seconds for the servers to boot up fully...
@@ -37,6 +37,7 @@ timeout /t 10 /nobreak >nul
 :: Automatically open browser
 echo [BROWSER] Opening TrackFlow...
 start http://localhost:5173
+start http://localhost:5174
 
 echo.
 echo ========================================================
