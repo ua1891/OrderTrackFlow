@@ -40,6 +40,7 @@ async function sendWelcomeEmail(user, generatedPassword) {
     console.log(`Welcome email sent for ${user.email}: ${info.messageId}`);
   } catch (error) {
     console.error(`Failed to send welcome email for ${user.email}:`, error.message);
+    throw error; // This is the fix! Now the authService knows it failed.
   }
 }
 
