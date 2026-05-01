@@ -21,10 +21,18 @@ async function registerUser(name, email) {
     data: { name, email, password: hashedPassword }
   });
 
-  const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-
-  // Send Welcome Email containing the plaintext password
-  await sendWelcomeEmail(user, generatedPassword);
+  let token;
+  try {
+    token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+    
+    // Send Welcome Email containing the plaintext password
+    await sendWelcomeEmail(user, generatedPassword);
+  } catch (error) {
+    // If email fails, rollback (delete the user) so they aren't stuck without a password
+    await prisma.user.delete({ where: { id: user.id } });
+    console.error("Signup Email Error:", error);
+    throw new Error("Account creation failed: Could not send the welcome email. Please check email settings.");
+  }
 
   return { user: { id: user.id, name: user.name, email: user.email }, token };
 }
