@@ -7,17 +7,23 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
+    setIsLoading(true);
+    setError('');
     try {
       await register(name, email);
       setIsRegistered(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to sign up');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,9 +92,14 @@ export default function Signup() {
               required 
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ marginTop: 8, padding: '12px 20px', fontSize: 16, width: '100%' }}>
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ marginTop: 8, padding: '12px 20px', fontSize: 16, width: '100%', opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+            disabled={isLoading}
+          >
             <UserPlus size={18} style={{ marginRight: 8 }} />
-            Sign Up
+            {isLoading ? 'Creating Account & Sending Email...' : 'Sign Up'}
           </button>
         </form>
         <p style={{ textAlign: 'center', marginTop: 24, color: 'var(--text-muted)' }}>
