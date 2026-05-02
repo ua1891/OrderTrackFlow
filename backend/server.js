@@ -19,7 +19,59 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/orders", require("./routes/orders"));
 
 // ─────────────────────────────────────────────
-// WHATSAPP WEBHOOK — Step 3
+// WHATSAPP HELPER
+// ─────────────────────────────────────────────
+
+const sendWhatsAppMessage = async (to, text) => {
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.WA_PHONE_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.WA_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: to,
+          type: "text",
+          text: { body: text },
+        }),
+      }
+    );
+    const data = await response.json();
+    console.log("📤 WhatsApp message sent:", data);
+  } catch (error) {
+    console.error("❌ Failed to send WhatsApp message:", error);
+  }
+};
+
+// Normalize phone: strip +, spaces, dashes for flexible matching
+const normalizePhone = (phone) => phone.replace(/[\s\-\+]/g, "");
+
+const findOrderByPhone = async (rawPhone) => {
+  const normalized = normalizePhone(rawPhone); // e.g. "919876543210"
+  const last10     = normalized.slice(-10);    // e.g. "9876543210"
+
+  // Try all possible formats stored in DB
+  return await prisma.order.findFirst({
+    where: {
+      customerPhone: {
+        in: [
+          normalized,         // "919876543210"
+          `+${normalized}`,   // "+919876543210"
+          last10,             // "9876543210"
+          `+91${last10}`,     // "+919876543210" (India specific)
+        ],
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+// ─────────────────────────────────────────────
+// WHATSAPP WEBHOOK
 // ─────────────────────────────────────────────
 
 // GET: Meta calls this once to verify your webhook is real
@@ -32,7 +84,7 @@ app.get("/webhook", (req, res) => {
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
     console.log("✅ WhatsApp Webhook verified!");
-    res.status(200).send(challenge); // Must echo this back to Meta
+    res.status(200).send(challenge);
   } else {
     console.warn("❌ Webhook verification failed. Check WEBHOOK_VERIFY_TOKEN.");
     res.sendStatus(403);
@@ -51,9 +103,28 @@ app.post("/webhook", (req, res) => {
         // Incoming messages from customers
         const messages = value?.messages;
         if (messages) {
-          messages.forEach((msg) => {
-            console.log(`📩 Message from ${msg.from}: ${msg.text?.body}`);
-            // TODO: Save to DB or trigger auto-reply here
+          messages.forEach(async (msg) => {
+            const phone = msg.from;
+            const text  = msg.text?.body;
+            console.log(`📩 Message from ${phone}: ${text}`);
+
+            try {
+              const order = await findOrderByPhone(phone);
+
+              if (order) {
+                await sendWhatsAppMessage(
+                  phone,
+                  `Hi ${order.customerName}! 👋\n\nYour order *#${order.trackingNumber}* is currently:\n*${order.status}* 🚚\n\n${order.statusDetails ? order.statusDetails + "\n\n" : ""}Reply anytime to check your latest order status.`
+                );
+              } else {
+                await sendWhatsAppMessage(
+                  phone,
+                  `Hi! 👋 We couldn't find an order linked to your number.\n\nPlease contact support or check your tracking number.`
+                );
+              }
+            } catch (err) {
+              console.error("❌ Error handling incoming message:", err);
+            }
           });
         }
 
