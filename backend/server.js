@@ -12,11 +12,22 @@ const corsOptions = {
   credentials: true,
 };
 app.use(cors(corsOptions));
-app.use(express.json());
+
+// ─── Raw Body Capture (MUST be before express.json) ─────────────────────────
+// Shopify HMAC verification requires the raw, unparsed request body.
+// We capture it here and attach it to req.rawBody for use in the webhook route.
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/orders", require("./routes/orders"));
+app.use("/api/webhooks", require("./routes/webhooks"));
 
 // ─────────────────────────────────────────────
 // WHATSAPP HELPER

@@ -43,3 +43,27 @@ model Alert {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+// ─── Shopify Order Confirmation Flow ──────────────────────────────────────────
+model ShopifyOrder {
+  id                 String    @id @default(uuid())
+  shopifyOrderId     String    @unique  // Shopify's own order ID
+  orderNumber        String              // Human-readable: #1001
+  customerName       String
+  customerPhone      String              // The number we send WhatsApp to
+  customerEmail      String?
+
+  // Confirmation state machine:
+  // PENDING    → WhatsApp sent, waiting for reply
+  // CONFIRMED  → Customer replied YES
+  // CANCELLED  → Customer replied NO
+  // NO_RESPONSE → 48h passed, vendor notified to call
+  confirmationStatus String    @default("PENDING")
+
+  whatsappSentAt     DateTime?           // When we sent the first WhatsApp message
+  reminderSentAt     DateTime?           // When we sent the 24h reminder
+  vendorNotifiedAt   DateTime?           // When we emailed vendor (confirmed/cancelled/no-response)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}

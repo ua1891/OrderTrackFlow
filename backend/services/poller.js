@@ -157,10 +157,108 @@ async function runTrackingCycle() {
 // Run cron job based on frequency
 function startCronJobs() {
   const CRON_SCHEDULE = process.env.POLLING_SCHEDULE || "*/5 * * * *";
-  
+
+  // Existing: Track TCS/PostEx shipment status changes
   cron.schedule(CRON_SCHEDULE, runTrackingCycle);
-  
+
+  // New: Every hour — check for unanswered Shopify order confirmations
+  cron.schedule("0 * * * *", runShopifyConfirmationReminders);
+
   console.log(`Cron jobs initialized with schedule: ${CRON_SCHEDULE}`);
+  console.log("Shopify confirmation reminder cron initialized: every hour");
 }
 
-module.exports = { startCronJobs, processOrderUpdate, runTrackingCycle, fetchActiveOrders };
+// ─────────────────────────────────────────────────────────────
+// SHOPIFY CONFIRMATION REMINDER CRON
+// Runs every hour. Checks for PENDING orders and:
+//   → 24h passed: send WhatsApp reminder
+//   → 48h passed: email vendor to call the customer manually
+// ─────────────────────────────────────────────────────────────
+async function runShopifyConfirmationReminders() {
+  console.log("[SHOPIFY CRON] Checking for unanswered order confirmations...");
+
+  try {
+    const now = new Date();
+    const HOURS_24 = 24 * 60 * 60 * 1000;
+    const HOURS_48 = 48 * 60 * 60 * 1000;
+
+    const pendingOrders = await prisma.shopifyOrder.findMany({
+      where: { confirmationStatus: "PENDING" },
+    });
+
+    console.log(`[SHOPIFY CRON] Found ${pendingOrders.length} pending order(s).`);
+
+    for (const order of pendingOrders) {
+      const sentAt  = order.whatsappSentAt ? new Date(order.whatsappSentAt) : null;
+      if (!sentAt) continue;
+
+      const elapsed = now - sentAt;
+
+      // ── 48h: No response at all — email vendor to call customer ──
+      if (elapsed >= HOURS_48 && !order.vendorNotifiedAt) {
+        await prisma.shopifyOrder.update({
+          where: { id: order.id },
+          data: {
+            confirmationStatus: "NO_RESPONSE",
+            vendorNotifiedAt:   now,
+          },
+        });
+
+        await sendReminderEmail(
+          "📞 URGENT: No Response — Please Call Customer",
+          `Order #${order.orderNumber} has received NO response from the customer for 48 hours.\n\nCustomer Details:\n  Name: ${order.customerName}\n  Phone: ${order.customerPhone}\n  Email: ${order.customerEmail || "N/A"}\n\nPlease call the customer to confirm whether they want this order.`
+        );
+
+        console.log(`[SHOPIFY CRON] Order #${order.orderNumber} — 48h NO_RESPONSE. Vendor emailed to call.`);
+
+      // ── 24h: First reminder via WhatsApp ──
+      } else if (elapsed >= HOURS_24 && !order.reminderSentAt) {
+        const { sendWhatsAppConfirmation } = require("./whatsappService");
+
+        await sendWhatsAppConfirmation(order.customerPhone, order.customerName, order.orderNumber);
+
+        await prisma.shopifyOrder.update({
+          where: { id: order.id },
+          data: { reminderSentAt: now },
+        });
+
+        console.log(`[SHOPIFY CRON] Order #${order.orderNumber} — 24h REMINDER sent to ${order.customerPhone}.`);
+      }
+    }
+  } catch (error) {
+    console.error("[SHOPIFY CRON] Error during reminder check:", error.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Helper — Send direct email via nodemailer (for cron alerts)
+// ─────────────────────────────────────────────────────────────
+async function sendReminderEmail(subject, text) {
+  const nodemailer = require("nodemailer");
+
+  const transporter = nodemailer.createTransport({
+    host:   process.env.SMTP_HOST,
+    port:   parseInt(process.env.SMTP_PORT),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from:    `"TrackFlow Alerts" <${process.env.SMTP_USER}>`,
+    to:      process.env.VENDOR_EMAIL,
+    subject: subject,
+    text:    text,
+  });
+}
+
+module.exports = {
+  startCronJobs,
+  processOrderUpdate,
+  runTrackingCycle,
+  fetchActiveOrders,
+  runShopifyConfirmationReminders, // exported for manual testing
+};
+
