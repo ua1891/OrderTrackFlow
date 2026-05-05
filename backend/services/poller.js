@@ -205,6 +205,7 @@ async function runShopifyConfirmationReminders() {
         });
 
         await sendReminderEmail(
+          order,
           "📞 URGENT: No Response — Please Call Customer",
           `Order #${order.orderNumber} has received NO response from the customer for 48 hours.\n\nCustomer Details:\n  Name: ${order.customerName}\n  Phone: ${order.customerPhone}\n  Email: ${order.customerEmail || "N/A"}\n\nPlease call the customer to confirm whether they want this order.`
         );
@@ -231,27 +232,15 @@ async function runShopifyConfirmationReminders() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Helper — Send direct email via nodemailer (for cron alerts)
+// Helper — Send direct email via Brevo
 // ─────────────────────────────────────────────────────────────
-async function sendReminderEmail(subject, text) {
-  const nodemailer = require("nodemailer");
-
-  const transporter = nodemailer.createTransport({
-    host:   process.env.SMTP_HOST,
-    port:   parseInt(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-  await transporter.sendMail({
-    from:    `"TrackFlow Alerts" <${process.env.SMTP_USER}>`,
-    to:      process.env.VENDOR_EMAIL,
-    subject: subject,
-    text:    text,
-  });
+async function sendReminderEmail(order, subject, text) {
+  const { sendAlertEmail } = require("./email");
+  try {
+    await sendAlertEmail(order, subject, text);
+  } catch (error) {
+    console.error(`[SHOPIFY CRON] Failed to send reminder email:`, error.message);
+  }
 }
 
 module.exports = {

@@ -177,6 +177,7 @@ router.post("/whatsapp", async (req, res) => {
       });
 
       await sendVendorEmail(
+        order,
         "✅ Order Confirmed — Please Ship!",
         `Customer ${order.customerName} (${order.customerPhone}) has CONFIRMED their order #${order.orderNumber}.\n\nPlease process and ship the order immediately.`
       );
@@ -194,6 +195,7 @@ router.post("/whatsapp", async (req, res) => {
       });
 
       await sendVendorEmail(
+        order,
         "❌ Order Cancelled by Customer",
         `Customer ${order.customerName} (${order.customerPhone}) has CANCELLED their order #${order.orderNumber}.\n\nPlease do NOT ship this order.`
       );
@@ -213,28 +215,15 @@ router.post("/whatsapp", async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // Helper — Send email to vendor
 // ─────────────────────────────────────────────────────────────
-async function sendVendorEmail(subject, text) {
+async function sendVendorEmail(order, subject, text) {
   const { sendAlertEmail } = require("../services/email");
-  // We reuse sendAlertEmail by constructing a compatible object
-  // The email service will send to process.env.VENDOR_EMAIL
-  const nodemailer = require("nodemailer");
-
-  const transporter = nodemailer.createTransport({
-    host:   process.env.SMTP_HOST,
-    port:   parseInt(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-  await transporter.sendMail({
-    from:    `"TrackFlow Alerts" <${process.env.SMTP_USER}>`,
-    to:      process.env.VENDOR_EMAIL,
-    subject: subject,
-    text:    text,
-  });
+  try {
+    // We reuse the existing sendAlertEmail service which uses Brevo
+    await sendAlertEmail(order, subject, text);
+    console.log(`[EMAIL] Notification sent to vendor for order #${order.orderNumber}`);
+  } catch (error) {
+    console.error(`[EMAIL] Failed to send vendor notification:`, error.message);
+  }
 }
 
 module.exports = router;

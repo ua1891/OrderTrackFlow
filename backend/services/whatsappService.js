@@ -99,36 +99,7 @@ function formatPhone(phone) {
   return cleaned;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Legacy test function (kept for reference)
-// ─────────────────────────────────────────────────────────────
-async function sendTemplateMessage() {
-  try {
-    const response = await axios({
-      url: WHATSAPP_API_URL,
-      method: "post",
-      headers: {
-        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      data: {
-        messaging_product: "whatsapp",
-        to: "923102501142",
-        type: "template",
-        template: {
-          name: "hello_world",
-          language: { code: "en_US" },
-        },
-      },
-    });
-    console.log(response.data);
-  } catch (error) {
-    console.error(error.response?.data || error.message);
-  }
-}
-
 module.exports = {
   sendWhatsAppConfirmation,
   sendTextMessage,
-  sendTemplateMessage,
 };
