@@ -36,13 +36,17 @@ async function sendEmailViaBrevo(to, subject, htmlContent) {
 async function sendAlertEmail(order, alertType, message) {
   try {
     const targetEmail = order.user?.email || process.env.VENDOR_EMAIL;
-    const subject = `[TrackFlow] Alert for Order #${order.trackingNumber}: ${alertType}`;
+    // Handle both regular orders (trackingNumber) and Shopify orders (orderNumber)
+    const identifier = order.trackingNumber || order.orderNumber || "Unknown";
+    
+    const subject = `[TrackFlow] Alert for Order #${identifier}: ${alertType}`;
     const html = getAlertEmailHTML(order, alertType, message);
     
     await sendEmailViaBrevo(targetEmail, subject, html);
-    console.log(`Alert email sent via Brevo for ${order.trackingNumber}`);
+    console.log(`Alert email sent via Brevo for Order #${identifier}`);
   } catch (error) {
-    console.error(`Failed to send alert email for ${order.trackingNumber}:`, error.message);
+    const identifier = order.trackingNumber || order.orderNumber || "Unknown";
+    console.error(`Failed to send alert email for Order #${identifier}:`, error.message);
     throw error;
   }
 }
