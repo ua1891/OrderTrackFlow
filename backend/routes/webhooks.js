@@ -226,31 +226,5 @@ async function sendVendorEmail(order, subject, text) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// FORCE TEST ROUTE (Temporary for Usman)
-// ─────────────────────────────────────────────────────────────
-router.post("/force-test", async (req, res) => {
-  try {
-    const { customerPhone, customerName } = req.body;
-    const orderNumber = "TEST-" + Math.floor(Math.random() * 1000);
-    const shopifyOrderId = "manual_" + Date.now();
-
-    await prisma.shopifyOrder.create({
-      data: {
-        shopifyOrderId,
-        orderNumber,
-        customerName,
-        customerPhone,
-        confirmationStatus: "PENDING",
-      }
-    });
-
-    await sendWhatsAppConfirmation(customerPhone, customerName, orderNumber);
-    res.json({ message: "Test sent successfully to " + customerPhone });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 module.exports = router;
 
