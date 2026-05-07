@@ -94,12 +94,12 @@ export default function Dashboard() {
                   className="form-input"
                   value={formData.trackingNumber}
                   onChange={e => setFormData({ trackingNumber: e.target.value })}
-                  placeholder="e.g. 1234567890 or CX-XXXXXXXXXXX"
+                  placeholder="e.g. 1234567890 (TCS) or 284391... (PostEx)"
                   required
                   autoFocus
                 />
                 <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)' }}>
-                  Customer details will be fetched automatically. PostEx numbers must start with 'CX-'.
+                  Customer details will be fetched automatically. Supports numeric PostEx numbers (14 digits) and 'CX-' prefixes.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>

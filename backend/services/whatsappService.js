@@ -1,7 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
 
-const WHATSAPP_API_URL = `https://graph.facebook.com/v22.0/${process.env.PHONE_NUMBER_ID}/messages`;
+const WHATSAPP_API_URL = `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`;
 
 // ─────────────────────────────────────────────────────────────
 // Send a FREE-FORM text message (only valid within 24h of customer

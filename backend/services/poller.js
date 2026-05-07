@@ -122,7 +122,10 @@ async function fetchActiveOrders() {
 async function trackAndProcessOrders(activeOrders) {
   for (const order of activeOrders) {
     try {
-      const isPostex = order.trackingNumber.toLowerCase().startsWith('cx-');
+      // PostEx tracking numbers can start with 'cx-' or be numeric (usually 14 digits)
+      const isPostex = order.trackingNumber.toLowerCase().startsWith('cx-') || 
+                       (/^[0-9]+$/.test(order.trackingNumber) && order.trackingNumber.length >= 14);
+
       let trackingData;
       
       if (isPostex) {

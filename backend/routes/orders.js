@@ -8,8 +8,19 @@ const authenticateToken = require("../middleware/auth");
 
 router.use(authenticateToken); // Protect all routes below
 
+function validateOrderInput(req, res, next) {
+  const { trackingNumber } = req.body;
+  if (!trackingNumber || typeof trackingNumber !== 'string' || trackingNumber.trim() === '') {
+    return res.status(400).json({
+      error: 'Tracking number is required and must be a non-empty string.'
+    });
+  }
+  req.body.trackingNumber = trackingNumber.trim();
+  next();
+}
+
 // Create New Order
-router.post("/", async (req, res) => {
+router.post("/", validateOrderInput, async (req, res) => {
   try {
     const { trackingNumber, customerName, destination } = req.body;
     

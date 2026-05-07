@@ -1,4 +1,20 @@
 require("dotenv").config();
+
+// ─── Environment Validation (run BEFORE any other imports) ──────
+const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DATABASE_URL'];
+const WARN_ENV_VARS = ['TCS_BEARER_TOKEN', 'BREVO_API_KEY', 'POSTEX_TOKEN'];
+
+const missing = REQUIRED_ENV_VARS.filter(v => !process.env[v]);
+if (missing.length > 0) {
+  console.error(`[STARTUP ERROR] Missing required environment variables: ${missing.join(', ')}`);
+  process.exit(1); // Exit before anything else starts
+}
+
+const warnMissing = WARN_ENV_VARS.filter(v => !process.env[v]);
+if (warnMissing.length > 0) {
+  console.warn(`[STARTUP WARN] Optional env vars not set (some features disabled): ${warnMissing.join(', ')}`);
+}
+
 const express = require("express");
 const cors = require("cors");
 const prisma = require("./utils/prisma");
@@ -25,7 +41,18 @@ app.use(
 );
 
 // Routes
-app.use("/api/auth", require("./routes/auth"));
+const rateLimit = require('express-rate-limit');
+
+// Limit auth endpoints: max 10 requests per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: { error: 'Too many requests from this IP. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/auth", authLimiter, require("./routes/auth"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/webhooks", require("./routes/webhooks"));
 
@@ -58,3 +85,5 @@ process.on("SIGINT", async () => {
     process.exit(0);
   });
 });
+
+module.exports = app;

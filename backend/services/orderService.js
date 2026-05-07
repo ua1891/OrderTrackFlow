@@ -7,7 +7,10 @@ async function createOrder(userId, trackingNumber, customerName, destination) {
     throw new Error("Tracking number is required");
   }
 
-  const isPostex = trackingNumber.toLowerCase().startsWith('cx-');
+  // PostEx tracking numbers can start with 'cx-' or be numeric (usually 14 digits starting with '2')
+  const isPostex = trackingNumber.toLowerCase().startsWith('cx-') || 
+                   (/^[0-9]+$/.test(trackingNumber) && trackingNumber.length >= 14);
+
 
   // Basic verify
   let trackingData;

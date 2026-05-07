@@ -27,28 +27,46 @@ TrackFlow is a **real-time shipment management platform** that bridges the gap b
 
 | Feature | Description |
 |---|---|
-| 🔄 **Auto-Polling** | Background cron job checks TCS API every 5 minutes |
-| 📧 **Email Alerts** | Instant notifications for deliveries, returns & delays |
+| 🔄 **Auto-Polling** | Background cron job checks TCS & PostEx APIs every 5 minutes |
+| 📧 **Email Alerts** | Instant notifications for deliveries, returns & delays via Brevo REST API |
 | 📊 **Analytics Dashboard** | 7-day trend charts, live metrics, and status breakdown |
-| 🔐 **Auth System** | JWT-based login/signup with encrypted passwords |
+| 🔐 **Auth System** | JWT-based auth with rate-limiting and encrypted passwords |
 | 📦 **Order Management** | Add, filter, and sort all your consignments in one place |
 | 🔔 **Alert Feed** | Full history of all system notifications |
-| 💬 **WhatsApp Integration** | *(Coming Soon)* WhatsApp alerts via Meta Cloud API |
+| 💬 **WhatsApp Flow** | Shopify-integrated WhatsApp confirmations via Meta Cloud API |
+| 🧪 **Testing Suite** | Automated Unit & Integration tests using Jest and Supertest |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ 3-Tier Architecture
+
+TrackFlow is built following the **3-Tier Architecture** pattern to ensure separation of concerns and low coupling.
+
+### Tier 1: Presentation Layer (Frontend)
+- **Technology:** React 18 + Vite
+- **Responsibility:** User interface, data visualization (Recharts), and client-side routing.
+- **Communication:** Calls the Backend API using an Axios client with JWT interceptors.
+
+### Tier 2: Application / Logic Layer (Backend)
+- **Technology:** Node.js + Express
+- **Responsibility:** Business logic, input validation, authentication, and external API integrations (TCS, PostEx, Meta, Brevo).
+- **Security:** Implements JWT verification, password hashing (bcrypt), and request rate-limiting.
+
+### Tier 3: Data Layer (Database)
+- **Technology:** PostgreSQL + Prisma ORM
+- **Responsibility:** Persistent storage for Users, Orders, Alerts, and Shopify data.
+- **Abstraction:** All database access is abstracted through Prisma, ensuring no raw SQL leakage into the logic layer.
 
 ```
 ┌─────────────────┐      HTTPS API      ┌──────────────────────┐
-│   React + Vite  │ ──────────────────► │  Node.js + Express   │
-│   (Vercel CDN)  │                     │  (Render Web Service) │
+│   Tier 1: React │ ──────────────────► │  Tier 2: Node/Express│
+│   (Presentation)│                     │  (Business Logic)    │
 └─────────────────┘                     └──────────┬───────────┘
                                                    │ Prisma ORM
                                                    ▼
                                         ┌──────────────────────┐
-                                        │   PostgreSQL Database │
-                                        │   (Render Free Tier)  │
+                                        │   Tier 3: PostgreSQL │
+                                        │   (Data Storage)     │
                                         └──────────────────────┘
 ```
 
@@ -116,6 +134,14 @@ cd ../frontend
 npm install
 npm run dev
 # App opens at http://localhost:5173
+```
+
+### 🧪 Running Tests
+TrackFlow uses **Jest** for unit testing and **Supertest** for integration testing.
+
+```bash
+cd backend
+npm test
 ```
 
 ### ⚡ Windows Quick Start
