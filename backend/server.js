@@ -65,25 +65,27 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error", message: err.message });
 });
 
-// Start server
-const server = app.listen(PORT, async () => {
-  console.log(`TrackFlow API running on http://localhost:${PORT}`);
-  
-  try {
-    startCronJobs();
-  } catch (error) {
-    console.error("Failed to start CronJobs", error);
-  }
-});
-
-// Graceful shutdown
-process.on("SIGINT", async () => {
-  console.log("Shutting down gracefully...");
-  await prisma.$disconnect();
-  server.close(() => {
-    console.log("Process terminated");
-    process.exit(0);
+// Start server (Only if run directly, not when required in tests)
+if (require.main === module) {
+  const server = app.listen(PORT, async () => {
+    console.log(`TrackFlow API running on http://localhost:${PORT}`);
+    
+    try {
+      startCronJobs();
+    } catch (error) {
+      console.error("Failed to start CronJobs", error);
+    }
   });
-});
+
+  // Graceful shutdown
+  process.on("SIGINT", async () => {
+    console.log("Shutting down gracefully...");
+    await prisma.$disconnect();
+    server.close(() => {
+      console.log("Process terminated");
+      process.exit(0);
+    });
+  });
+}
 
 module.exports = app;
