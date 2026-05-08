@@ -44,7 +44,7 @@ async function sendAlertEmail(order, alertType, message) {
     const html = getAlertEmailHTML(order, alertType, message);
     
     await sendEmailViaBrevo(targetEmail, subject, html);
-    console.log(`Alert email sent via Brevo for Order #${identifier}`);
+    console.info(`[SUCCESS] Alert email sent via Brevo for Order #${identifier}`);
   } catch (error) {
     const identifier = order.trackingNumber || order.orderNumber || "Unknown";
     console.error(`Failed to send alert email for Order #${identifier}:`, error.message);

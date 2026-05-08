@@ -96,10 +96,10 @@ router.post("/shopify", async (req, res) => {
     console.log(`[SHOPIFY WEBHOOK] ✅ Order Saved! ID: ${savedOrder.id}`);
 
     // Step 5: Send WhatsApp confirmation message to the customer
-    console.log(`[SHOPIFY WEBHOOK] STEP 2/2: Triggering WhatsApp API for ${customerPhone}...`);
+    console.info(`[SHOPIFY WEBHOOK] STEP 2/2: Triggering WhatsApp API for ${customerPhone}...`);
     const whatsappResponse = await sendWhatsAppConfirmation(customerPhone, customerName, orderNumber);
 
-    console.log(`[SHOPIFY WEBHOOK] 🚀 SUCCESS! WhatsApp accepted by Meta. Message ID: ${whatsappResponse.messages?.[0]?.id}`);
+    console.info(`[SHOPIFY WEBHOOK] SUCCESS: WhatsApp accepted by Meta. Message ID: ${whatsappResponse.messages?.[0]?.id}`);
     return res.status(200).json({ message: "Order processed. WhatsApp sent.", orderId: savedOrder.id });
 
   } catch (error) {
@@ -139,10 +139,10 @@ router.post("/test-trigger", async (req, res) => {
     });
     console.log(`[TEST TRIGGER] ✅ Test Order Saved! ID: ${savedOrder.id}`);
 
-    console.log(`[TEST TRIGGER] STEP 2/2: Sending WhatsApp via Meta API...`);
+    console.info(`[TEST TRIGGER] STEP 2/2: Sending WhatsApp via Meta API...`);
     const whatsappResponse = await sendWhatsAppConfirmation(phone, name, testOrderNumber);
 
-    console.log(`[TEST TRIGGER] 🚀 SUCCESS! Message ID: ${whatsappResponse.messages?.[0]?.id}`);
+    console.info(`[TEST TRIGGER] SUCCESS: Message ID: ${whatsappResponse.messages?.[0]?.id}`);
     return res.status(200).json({ message: "Test triggered successfully", orderId: savedOrder.id });
 
   } catch (error) {
