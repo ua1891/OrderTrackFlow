@@ -81,6 +81,7 @@ router.post("/shopify", async (req, res) => {
       return res.status(200).json({ message: "Duplicate order ignored." });
     }
 
+    console.log(`[SHOPIFY WEBHOOK] STEP 1/2: Saving Order #${orderNumber} to Database...`);
     const savedOrder = await prisma.shopifyOrder.create({
       data: {
         shopifyOrderId,
@@ -92,11 +93,13 @@ router.post("/shopify", async (req, res) => {
         whatsappSentAt:     new Date(),
       },
     });
+    console.log(`[SHOPIFY WEBHOOK] ✅ Order Saved! ID: ${savedOrder.id}`);
 
     // Step 5: Send WhatsApp confirmation message to the customer
-    await sendWhatsAppConfirmation(customerPhone, customerName, orderNumber);
+    console.log(`[SHOPIFY WEBHOOK] STEP 2/2: Triggering WhatsApp API for ${customerPhone}...`);
+    const whatsappResponse = await sendWhatsAppConfirmation(customerPhone, customerName, orderNumber);
 
-    console.log(`[SHOPIFY WEBHOOK] WhatsApp sent to ${customerPhone} for order #${orderNumber}`);
+    console.log(`[SHOPIFY WEBHOOK] 🚀 SUCCESS! WhatsApp accepted by Meta. Message ID: ${whatsappResponse.messages?.[0]?.id}`);
     return res.status(200).json({ message: "Order processed. WhatsApp sent.", orderId: savedOrder.id });
 
   } catch (error) {
@@ -122,6 +125,7 @@ router.post("/test-trigger", async (req, res) => {
   console.log(`[TEST TRIGGER] Starting manual test: #${testOrderNumber} for ${name} (${phone})`);
 
   try {
+    console.log(`[TEST TRIGGER] STEP 1/2: Saving Test Order to Database...`);
     const savedOrder = await prisma.shopifyOrder.create({
       data: {
         shopifyOrderId,
@@ -133,10 +137,12 @@ router.post("/test-trigger", async (req, res) => {
         whatsappSentAt:     new Date(),
       },
     });
+    console.log(`[TEST TRIGGER] ✅ Test Order Saved! ID: ${savedOrder.id}`);
 
-    await sendWhatsAppConfirmation(phone, name, testOrderNumber);
+    console.log(`[TEST TRIGGER] STEP 2/2: Sending WhatsApp via Meta API...`);
+    const whatsappResponse = await sendWhatsAppConfirmation(phone, name, testOrderNumber);
 
-    console.log(`[TEST TRIGGER] ✅ Success! Order saved and WhatsApp sent.`);
+    console.log(`[TEST TRIGGER] 🚀 SUCCESS! Message ID: ${whatsappResponse.messages?.[0]?.id}`);
     return res.status(200).json({ message: "Test triggered successfully", orderId: savedOrder.id });
 
   } catch (error) {
