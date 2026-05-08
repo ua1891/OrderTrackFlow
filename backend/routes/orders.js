@@ -5,15 +5,14 @@ const prisma = require("../utils/prisma");
 const { createOrder } = require("../services/orderService");
 const { getDashboardData } = require("../services/dashboardService");
 const authenticateToken = require("../middleware/auth");
+const { sendError, sendSuccess } = require("../utils/apiError");
 
 router.use(authenticateToken); // Protect all routes below
 
 function validateOrderInput(req, res, next) {
   const { trackingNumber } = req.body;
   if (!trackingNumber || typeof trackingNumber !== 'string' || trackingNumber.trim() === '') {
-    return res.status(400).json({
-      error: 'Tracking number is required and must be a non-empty string.'
-    });
+    return sendError(res, 400, 'Tracking number is required and must be a non-empty string.');
   }
   req.body.trackingNumber = trackingNumber.trim();
   next();
@@ -27,17 +26,17 @@ router.post("/", validateOrderInput, async (req, res) => {
     // createOrder handles validation, TCS check, and DB creation
     const newOrder = await createOrder(req.user.id, trackingNumber, customerName, destination);
 
-    res.status(201).json(newOrder);
+    return sendSuccess(res, newOrder, 201);
   } catch (error) {
     if (error.code === 'P2002') {
-      return res.status(400).json({ error: "Tracking number already exists." });
+      return sendError(res, 400, "Tracking number already exists.");
     }
     if (error.message === "Tracking number is required" || 
         error.message === "Invalid tracking number or not found in TCS." ||
         error.message.includes("already delivered")) {
-      return res.status(400).json({ error: error.message });
+      return sendError(res, 400, error.message);
     }
-    res.status(500).json({ error: error.message });
+    return sendError(res, 500, error.message);
   }
 });
 
@@ -45,9 +44,9 @@ router.post("/", validateOrderInput, async (req, res) => {
 router.get("/dashboard", async (req, res) => {
   try {
     const dashboardData = await getDashboardData(req.user.id);
-    res.json(dashboardData);
+    return sendSuccess(res, dashboardData);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return sendError(res, 500, error.message);
   }
 });
 

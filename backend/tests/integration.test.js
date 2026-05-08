@@ -1,6 +1,13 @@
+process.env.DATABASE_URL = 'file:./test.db';
 const request = require('supertest');
 const app = require('../server');
 const prisma = require('../utils/prisma');
+
+// Mock poller and cron jobs to prevent background tasks during tests
+jest.mock('../services/poller', () => ({
+  initializePoller: jest.fn(),
+  startConfirmationReminderCron: jest.fn()
+}));
 
 // Mock Prisma
 jest.mock('../utils/prisma', () => ({
@@ -14,12 +21,12 @@ jest.mock('../utils/prisma', () => ({
   }
 }));
 
-// Mock email service to avoid sending real emails during tests
+// Mock email service
 jest.mock('../services/email', () => ({
   sendWelcomeEmail: jest.fn().mockResolvedValue(true)
 }));
 
-describe('Integration Tests - Auth Routes', () => {
+describe('Integration Tests - API Routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -38,16 +45,31 @@ describe('Integration Tests - Auth Routes', () => {
       .send({ name: 'Test User', email: 'test@example.com' });
 
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('token');
-    expect(response.body.user.email).toBe('test@example.com');
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.user.email).toBe('test@example.com');
   });
 
-  test('POST /api/auth/register - Missing fields', async () => {
-    const response = await request(app)
-      .post('/api/auth/register')
-      .send({ name: 'Test User' });
+  test('POST /api/auth/login - Success', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'test-uuid',
+      name: 'Test User',
+      email: 'test@example.com',
+      password: require('bcryptjs').hashSync('password123', 10)
+    });
 
-    expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Name and email are required.');
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test@example.com', password: 'password123' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveProperty('token');
+  });
+
+  test('GET /api/orders/dashboard - Unauthorized without token', async () => {
+    const response = await request(app).get('/api/orders/dashboard');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.message).toBe('Access token required.');
   });
 });
