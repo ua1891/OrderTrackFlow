@@ -104,6 +104,7 @@ router.post("/shopify", async (req, res) => {
     // Always return 200 to Shopify — otherwise Shopify will retry repeatedly
     return res.status(200).json({ message: "Received with internal error." });
   }
+});
 // ─────────────────────────────────────────────────────────────
 // POST /api/webhooks/test-trigger
 // MANUAL TEST TRIGGER — Use this to test the flow on Render/Production
