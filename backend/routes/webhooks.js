@@ -104,7 +104,46 @@ router.post("/shopify", async (req, res) => {
     // Always return 200 to Shopify — otherwise Shopify will retry repeatedly
     return res.status(200).json({ message: "Received with internal error." });
   }
+// ─────────────────────────────────────────────────────────────
+// POST /api/webhooks/test-trigger
+// MANUAL TEST TRIGGER — Use this to test the flow on Render/Production
+// ─────────────────────────────────────────────────────────────
+router.post("/test-trigger", async (req, res) => {
+  const { phone, name, orderNumber } = req.body;
+
+  if (!phone || !name) {
+    return res.status(400).json({ error: "Phone and Name are required" });
+  }
+
+  const shopifyOrderId = "MANUAL_TEST_" + Date.now();
+  const testOrderNumber = orderNumber || "TEST-" + Math.floor(1000 + Math.random() * 9000);
+
+  console.log(`[TEST TRIGGER] Starting manual test: #${testOrderNumber} for ${name} (${phone})`);
+
+  try {
+    const savedOrder = await prisma.shopifyOrder.create({
+      data: {
+        shopifyOrderId,
+        orderNumber:    String(testOrderNumber),
+        customerName:   name,
+        customerPhone:  phone,
+        customerEmail:  "ua9118@gmail.com",
+        confirmationStatus: "PENDING",
+        whatsappSentAt:     new Date(),
+      },
+    });
+
+    await sendWhatsAppConfirmation(phone, name, testOrderNumber);
+
+    console.log(`[TEST TRIGGER] ✅ Success! Order saved and WhatsApp sent.`);
+    return res.status(200).json({ message: "Test triggered successfully", orderId: savedOrder.id });
+
+  } catch (error) {
+    console.error(`[TEST TRIGGER] ❌ Error:`, error.message);
+    return res.status(500).json({ error: error.message });
+  }
 });
+
 
 // ─────────────────────────────────────────────────────────────
 // GET /api/webhooks/whatsapp

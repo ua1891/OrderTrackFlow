@@ -52,15 +52,17 @@ async function sendWhatsAppConfirmation(to, customerName, orderNumber) {
         to: formattedPhone,
         type: "template",
         template: {
-          name: "hello_world", // ← Replace with your approved template name later
-          language: { code: "en_US" },
-          // When you have an approved custom template, pass components here:
-          // components: [
-          //   { type: "body", parameters: [
-          //     { type: "text", text: customerName },
-          //     { type: "text", text: String(orderNumber) }
-          //   ]}
-          // ]
+          name: "orderconfirmation",
+          language: { code: "en" },
+          components: [
+            {
+              type: "body",
+              parameters: [
+                { type: "text", text: customerName },
+                { type: "text", text: String(orderNumber) }
+              ]
+            }
+          ]
         },
       },
       {
@@ -72,6 +74,8 @@ async function sendWhatsAppConfirmation(to, customerName, orderNumber) {
     );
 
     console.log(`[WHATSAPP] Confirmation sent to ${formattedPhone} for order #${orderNumber}`);
+    console.log(`[WHATSAPP] Message ID:`, response.data.messages?.[0]?.id);
+    console.log(`[WHATSAPP] Full Response:`, JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error(
