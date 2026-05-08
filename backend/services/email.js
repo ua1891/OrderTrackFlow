@@ -25,6 +25,7 @@ async function sendEmailViaBrevo(to, subject, htmlContent) {
         'Content-Type': 'application/json'
       }
     });
+    console.log(`[BREVO API] Response:`, JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     const errorMsg = error.response?.data?.message || error.message;
