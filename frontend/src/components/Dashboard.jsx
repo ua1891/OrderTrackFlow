@@ -21,7 +21,8 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       const res = await client.get(`/orders/dashboard`);
-      setData(res.data);
+      // sendSuccess wraps data in a 'data' property
+      setData(res.data.data);
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {

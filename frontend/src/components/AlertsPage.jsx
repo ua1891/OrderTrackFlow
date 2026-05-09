@@ -10,7 +10,8 @@ export default function AlertsPage() {
   const fetchAlerts = async () => {
     try {
       const res = await client.get(`/orders/dashboard`);
-      setAlerts(res.data.alerts);
+      // sendSuccess wraps data in a 'data' property
+      setAlerts(res.data.data.alerts);
       setError(null);
     } catch (err) {
       console.error("Failed to load alerts", err);

@@ -10,7 +10,8 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       const res = await client.get(`/orders/dashboard`);
-      setOrders(res.data.orders);
+      // sendSuccess wraps data in a 'data' property
+      setOrders(res.data.data.orders);
       setError(null);
     } catch (err) {
       console.error("Failed to load orders", err);
