@@ -15,7 +15,8 @@ export const AuthProvider = ({ children }) => {
       // Verify the token is still valid with the backend
       client.get('/auth/me')
         .then(res => {
-          setUser(res.data.user);
+          // sendSuccess wraps data in a 'data' property
+          setUser(res.data.data.user);
         })
         .catch(() => {
           // Token is invalid or user no longer exists — clear everything
@@ -31,7 +32,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await client.post('/auth/login', { email, password });
-    const { token, user } = res.data;
+    // sendSuccess wraps data in a 'data' property
+    const { token, user } = res.data.data;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
     setUser(user);
@@ -41,7 +43,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email) => {
     const res = await client.post('/auth/register', { name, email });
     // We don't log them in automatically because they need to check email for password
-    return res.data;
+    return res.data.data;
   };
 
   const logout = () => {
