@@ -16,7 +16,9 @@ export default function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to login');
+      // Correctly extract the message string to avoid crashing React
+      const msg = err.response?.data?.error?.message || err.response?.data?.error || 'Failed to login';
+      setError(typeof msg === 'string' ? msg : 'An unexpected error occurred');
     }
   };
 

@@ -21,7 +21,9 @@ export default function Signup() {
       await register(name, email);
       setIsRegistered(true);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to sign up');
+      // Correctly extract the message string to avoid crashing React
+      const msg = err.response?.data?.error?.message || err.response?.data?.error || 'Failed to sign up';
+      setError(typeof msg === 'string' ? msg : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
