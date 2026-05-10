@@ -211,7 +211,7 @@ trackflow/
 
 ## 🤝 Contributing
 
-This is a university project. For any queries, reach out via the GitHub Issues tab.
+This is a university project. For any queries, reach out via the GitHub Issues Tab.
 
 ---
 
